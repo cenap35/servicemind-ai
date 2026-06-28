@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     api_prefix: str = "/api/v1"
     
     ollama_url: str = "http://127.0.0.1:11434/api/generate"
-    ollama_model: str = "llama3.2:1b"
+    ollama_model: str = "qwen2.5:3b"
 
 
 settings = Settings()
