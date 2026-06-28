@@ -6,6 +6,9 @@ class Settings(BaseSettings):
     app_description: str = "AI-powered automotive intelligence platform."
     app_version: str = "1.0.0"
     api_prefix: str = "/api/v1"
+    
+    ollama_url: str = "http://127.0.0.1:11434/api/generate"
+    ollama_model: str = "llama3.2:1b"
 
 
 settings = Settings()

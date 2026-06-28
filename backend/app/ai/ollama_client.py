@@ -1,11 +1,13 @@
 import httpx
 
+from app.core.config import settings
+
 
 def ask_ollama(prompt: str) -> str:
     response = httpx.post(
-        "http://127.0.0.1:11434/api/generate",
+        settings.ollama_url,
         json={
-            "model": "llama3.2:1b",
+            "model": settings.ollama_model,
             "prompt": prompt,
             "stream": False,
         },
