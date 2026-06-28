@@ -3,7 +3,7 @@ from app.rag.retriever import retrieve_context
 
 
 def ask_mechanic(question: str) -> str:
-    context = retrieve_context(question)
+    context, source_file = retrieve_context(question)
 
     prompt = f"""
 Sen Türkçe konuşan bir otomotiv bakım asistanısın.
@@ -32,4 +32,4 @@ Güvenlik notu:
 -
 """
 
-    return ask_ollama(prompt)
+    return ask_ollama(prompt), source_file

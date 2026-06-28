@@ -15,9 +15,10 @@ class ChatRequest(BaseModel):
 
 @router.post("/")
 def chat(request: ChatRequest):
-    answer = ask_mechanic(request.message)
+    answer, source_file = ask_mechanic(request.message)
 
     return {
         "user_message": request.message,
         "assistant_message": answer,
+        "source_file": source_file,
     }
