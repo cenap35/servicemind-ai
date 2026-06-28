@@ -1,19 +1,39 @@
-from pathlib import Path
+from app.rag.knowledge_base import load_maintenance_guide
 
-BASE_DIR = Path(__file__).resolve().parents[3]
-GUIDES_DIR = BASE_DIR / "data" / "maintenance_guides"
+DOCUMENTS = [
+    {
+        "file": "toyota_corolla_120k.txt",
+        "keywords": ["toyota", "corolla", "120000", "120.000", "120k", "bakım"],
+    },
+    {
+        "file": "toyota_corolla_60000.txt",
+        "keywords": ["toyota", "corolla", "60000", "60.000", "60k", "bakım"],
+    },
+    {
+        "file": "engine_oil.txt",
+        "keywords": ["motor", "yağ", "yağı", "oil", "filtre"],
+    },
+]
 
 
 def retrieve_context(question: str) -> tuple[str, str]:
     question = question.lower()
 
-    if "corolla" in question and "120000" in question:
-        file = GUIDES_DIR / "toyota_corolla_120k.txt"
+    best_document = DOCUMENTS[0]
+    best_score = 0
 
-    elif "corolla" in question and "60000" in question:
-        file = GUIDES_DIR / "toyota_corolla_60000.txt"
+    for document in DOCUMENTS:
+        score = 0
 
-    else:
-        file = GUIDES_DIR / "engine_oil.txt"
+        for keyword in document["keywords"]:
+            if keyword in question:
+                score += 1
 
-    return file.read_text(encoding="utf-8"), file.name
+        if score > best_score:
+            best_score = score
+            best_document = document
+
+    file_name = best_document["file"]
+    context = load_maintenance_guide(file_name)
+
+    return context, file_name
