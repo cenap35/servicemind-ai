@@ -1,17 +1,8 @@
-TOYOTA_COROLLA_120K_GUIDE = """
-2018 Toyota Corolla 120.000 km civarında genel olarak kontrol edilebilecek bakım kalemleri:
-- Motor yağı ve yağ filtresi
-- Hava filtresi
-- Polen filtresi
-- Yakıt filtresi, araç versiyonuna göre
-- Bujiler, benzinli motorlarda bakım planına göre
-- Fren balataları ve fren diskleri
-- Fren hidroliği
-- Antifriz / soğutma sıvısı
-- Şanzıman yağı, kullanım ve şanzıman tipine göre
-- Triger kayışı veya zincir durumu, motor tipine göre
-- Akü durumu
-- Lastik diş derinliği, rot-balans ve ön düzen
-- Süspansiyon parçaları
-- Kayışlar, hortumlar ve kaçak kontrolleri
-"""
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parents[3]
+GUIDE_PATH = BASE_DIR / "data" / "maintenance_guides" / "toyota_corolla_120k.txt"
+
+
+def load_toyota_corolla_120k_guide() -> str:
+    return GUIDE_PATH.read_text(encoding="utf-8")
