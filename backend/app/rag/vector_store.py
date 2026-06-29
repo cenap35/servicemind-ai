@@ -4,6 +4,7 @@ from chromadb import PersistentClient
 
 from app.ai.embedding_client import create_embedding
 from app.rag.chunker import split_text
+from app.rag.loader import load_document
 
 BASE_DIR = Path(__file__).resolve().parents[3]
 GUIDES_DIR = BASE_DIR / "data" / "maintenance_guides"
@@ -15,12 +16,19 @@ try:
 except Exception:
     pass
 
-collection = client.get_or_create_collection(name="maintenance_guides")
+collection = client.get_or_create_collection(
+    name="maintenance_guides"
+)
 
 
 def index_documents():
-    for file in GUIDES_DIR.glob("*.txt"):
-        text = file.read_text(encoding="utf-8")
+    for file in GUIDES_DIR.iterdir():
+
+        # Sadece txt ve pdf dosyalarını işle
+        if file.suffix.lower() not in [".txt", ".pdf"]:
+            continue
+
+        text = load_document(file)
         chunks = split_text(text)
 
         for index, chunk in enumerate(chunks):

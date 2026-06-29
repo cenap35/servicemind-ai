@@ -14,7 +14,7 @@ def retrieve_vector_context(question: str) -> tuple[str, str]:
 
     result = collection.query(
         query_embeddings=[question_embedding],
-        n_results=2,
+        n_results=3,
     )
 
     documents = result["documents"][0]
