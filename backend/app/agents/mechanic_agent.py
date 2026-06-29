@@ -1,9 +1,9 @@
 from app.ai.ollama_client import ask_ollama
-from app.rag.retriever import retrieve_context
+from app.rag.vector_retriever import retrieve_vector_context
 
 
 def ask_mechanic(question: str) -> str:
-    context, source_file = retrieve_context(question)
+    context, source_file = retrieve_vector_context(question)
 
     prompt = f"""
 Sen Türkçe konuşan bir otomotiv bakım asistanısın.
