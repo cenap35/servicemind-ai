@@ -15,20 +15,22 @@ def retrieve_vector_context(question: str) -> tuple[str, str]:
     result = collection.query(
         query_embeddings=[question_embedding],
         n_results=3,
+        include=["documents", "metadatas", "distances"],
     )
 
     documents = result["documents"][0]
     metadatas = result["metadatas"][0]
+    distances = result["distances"][0]
 
     context = "\n\n---\n\n".join(documents)
 
-    source_files = []
+    sources = []
 
-    for metadata in metadatas:
+    for metadata, distance in zip(metadatas, distances):
         source = metadata["source"]
         chunk = metadata["chunk"]
-        source_files.append(f"{source}#chunk-{chunk}")
+        sources.append(f"{source}#chunk-{chunk} distance={distance:.4f}")
 
-    source_info = ", ".join(source_files)
+    source_info = ", ".join(sources)
 
     return context, source_info
