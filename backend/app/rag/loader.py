@@ -4,15 +4,18 @@ from pypdf import PdfReader
 
 
 def load_document(file_path: Path) -> str:
-    if file_path.suffix == ".txt":
+    suffix = file_path.suffix.lower()
+
+    if suffix == ".txt":
         return file_path.read_text(encoding="utf-8")
 
-    if file_path.suffix == ".pdf":
+    if suffix == ".pdf":
         reader = PdfReader(file_path)
 
-        pages = []
-        for page in reader.pages:
-            pages.append(page.extract_text() or "")
+        pages = [
+            page.extract_text() or ""
+            for page in reader.pages
+        ]
 
         return "\n".join(pages)
 

@@ -16,4 +16,6 @@ def ask_ollama(prompt: str) -> str:
 
     response.raise_for_status()
 
-    return response.json()["response"]
+    data = response.json()
+
+    return data["response"]

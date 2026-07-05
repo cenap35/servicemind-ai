@@ -1,10 +1,16 @@
+from pathlib import Path
+
 from chromadb import PersistentClient
 
 from app.ai.embedding_client import create_embedding
 
-client = PersistentClient(path="data/chroma_db")
+BASE_DIR = Path(__file__).resolve().parents[3]
+CHROMA_PATH = BASE_DIR / "data" / "chroma_db"
+COLLECTION_NAME = "maintenance_guides"
 
-collection = client.get_or_create_collection(name="maintenance_guides")
+client = PersistentClient(path=str(CHROMA_PATH))
+
+collection = client.get_or_create_collection(name=COLLECTION_NAME)
 
 
 def retrieve_vector_context(question: str) -> tuple[str, str]:

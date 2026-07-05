@@ -9,15 +9,17 @@ from app.rag.metadata_parser import parse_metadata
 
 BASE_DIR = Path(__file__).resolve().parents[3]
 KNOWLEDGE_DIR = BASE_DIR / "data" / "knowledge"
+CHROMA_PATH = BASE_DIR / "data" / "chroma_db"
+COLLECTION_NAME = "maintenance_guides"
 
-client = PersistentClient(path="data/chroma_db")
+client = PersistentClient(path=str(CHROMA_PATH))
 
 try:
-    client.delete_collection(name="maintenance_guides")
+    client.delete_collection(name=COLLECTION_NAME)
 except Exception:
     pass
 
-collection = client.get_or_create_collection(name="maintenance_guides")
+collection = client.get_or_create_collection(name=COLLECTION_NAME)
 
 
 def index_documents():

@@ -1,11 +1,13 @@
 import httpx
 
+from app.core.config import settings
+
 
 def create_embedding(text: str) -> list[float]:
     response = httpx.post(
-        "http://127.0.0.1:11434/api/embeddings",
+        settings.embedding_url,
         json={
-            "model": "nomic-embed-text",
+            "model": settings.embedding_model,
             "prompt": text,
         },
         timeout=60,
@@ -13,4 +15,6 @@ def create_embedding(text: str) -> list[float]:
 
     response.raise_for_status()
 
-    return response.json()["embedding"]
+    data = response.json()
+
+    return data["embedding"]
