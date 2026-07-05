@@ -1,6 +1,0 @@
-Motor yağı hakkında genel bilgiler
-
-- Motor yağı motoru yağlar.
-- Üreticinin önerdiği viskozite kullanılmalıdır.
-- Yağ filtresi birlikte değiştirilmelidir.
-- Eksik yağ ile araç kullanılmamalıdır.

@@ -4,9 +4,7 @@ from app.ai.embedding_client import create_embedding
 
 client = PersistentClient(path="data/chroma_db")
 
-collection = client.get_or_create_collection(
-    name="maintenance_guides"
-)
+collection = client.get_or_create_collection(name="maintenance_guides")
 
 
 def retrieve_vector_context(question: str) -> tuple[str, str]:
@@ -27,10 +25,24 @@ def retrieve_vector_context(question: str) -> tuple[str, str]:
     sources = []
 
     for metadata, distance in zip(metadatas, distances):
-        source = metadata["source"]
-        chunk = metadata["chunk"]
-        sources.append(f"{source}#chunk-{chunk} distance={distance:.4f}")
+        source = metadata.get("source", "unknown")
+        source_path = metadata.get("source_path", "unknown")
+        chunk = metadata.get("chunk", "unknown")
+        knowledge_type = metadata.get("knowledge_type", "unknown")
+        brand = metadata.get("brand", "general")
+        model = metadata.get("model", "general")
+        year = metadata.get("year", 0)
 
-    source_info = ", ".join(sources)
+        sources.append(
+            f"{source}#chunk-{chunk} "
+            f"path={source_path} "
+            f"type={knowledge_type} "
+            f"brand={brand} "
+            f"model={model} "
+            f"year={year} "
+            f"distance={distance:.4f}"
+        )
+
+    source_info = " | ".join(sources)
 
     return context, source_info
