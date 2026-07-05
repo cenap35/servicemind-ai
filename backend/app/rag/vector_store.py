@@ -16,14 +16,11 @@ try:
 except Exception:
     pass
 
-collection = client.get_or_create_collection(
-    name="maintenance_guides"
-)
+collection = client.get_or_create_collection(name="maintenance_guides")
 
 
 def index_documents():
     for file in GUIDES_DIR.iterdir():
-
         # Sadece txt ve pdf dosyalarını işle
         if file.suffix.lower() not in [".txt", ".pdf"]:
             continue
@@ -42,6 +39,13 @@ def index_documents():
                     {
                         "source": file.name,
                         "chunk": index,
+                        "brand": "Toyota"
+                        if "toyota" in file.name.lower()
+                        else "general",
+                        "model": "Corolla"
+                        if "corolla" in file.name.lower()
+                        else "general",
+                        "year": 2018 if "2018" in file.name else 0,
                     }
                 ],
             )
