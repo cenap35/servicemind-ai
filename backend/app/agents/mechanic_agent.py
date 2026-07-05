@@ -2,18 +2,24 @@ from app.ai.ollama_client import ask_ollama
 from app.rag.vector_retriever import retrieve_vector_context
 
 
-def ask_mechanic(question: str) -> str:
+def ask_mechanic(question: str) -> tuple[str, str]:
     context, source_file = retrieve_vector_context(question)
 
     prompt = f"""
-Sen Türkçe konuşan bir otomotiv bakım asistanısın.
+Sen Türkçe konuşan bir otomotiv servis danışmanısın.
+
+Görevin:
+Verilen dokümandaki bilgiyi kullanıcıya anlaşılır Türkçe ile açıklamak.
 
 Kurallar:
-- Sadece verilen "Bilgi" bölümünü kullan.
-- Bilmediğin şeyi uydurma.
-- Kısa, net ve madde madde cevap ver.
-- Emin değilsen kullanıcıya uzman servis/usta kontrolü öner.
-- Teknik terimleri sade açıkla.
+- Cevabı sadece Bilgi bölümüne dayanarak ver.
+- İngilizce terimleri doğru çevir:
+  - tire = lastik
+  - tire pressure = lastik basıncı
+  - tire pressure warning light = lastik basıncı uyarı ışığı
+- Bilgi yetersizse bunu açıkça söyle.
+- Uydurma parça veya işlem yazma.
+- Kısa ve net cevap ver.
 
 Bilgi:
 {context}
@@ -21,15 +27,7 @@ Bilgi:
 Kullanıcının sorusu:
 {question}
 
-Cevap formatı:
-Kontrol edilmesi gerekenler:
--
-
-Servise sorulacak sorular:
--
-
-Güvenlik notu:
--
+Cevap:
 """
 
     return ask_ollama(prompt), source_file
