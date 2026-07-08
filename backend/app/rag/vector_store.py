@@ -11,7 +11,6 @@ BASE_DIR = Path(__file__).resolve().parents[3]
 KNOWLEDGE_DIR = BASE_DIR / "data" / "knowledge"
 CHROMA_PATH = BASE_DIR / "data" / "chroma_db"
 COLLECTION_NAME = "maintenance_guides"
-
 client = PersistentClient(path=str(CHROMA_PATH))
 
 try:
@@ -21,18 +20,14 @@ except Exception:
 
 collection = client.get_or_create_collection(name=COLLECTION_NAME)
 
-
 def index_documents():
     for file in KNOWLEDGE_DIR.rglob("*"):
         if file.suffix.lower() not in [".txt", ".pdf"]:
             continue
-
         text = load_document(file)
         chunks = split_text(text)
-
         for index, chunk in enumerate(chunks):
             embedding = create_embedding(chunk)
-
             collection.add(
                 ids=[f"{file.stem}_{index}"],
                 documents=[chunk],
@@ -41,7 +36,6 @@ def index_documents():
                     parse_metadata(file, index),
                 ],
             )
-
     print("✅ Tüm dokümanlar indexlendi.")
 
 
