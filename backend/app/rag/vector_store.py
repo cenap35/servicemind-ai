@@ -27,27 +27,46 @@ logger = logging.getLogger(__name__)
 client = PersistentClient(path=str(CHROMA_PATH))
 
 
-def recreate_collection():
-    try:
-        client.delete_collection(name=COLLECTION_NAME)
-        logger.info("Eski ChromaDB collection silindi: %s", COLLECTION_NAME)
-    except ValueError:
-        logger.info(
-            "Silinecek eski collection bulunamadı: %s",
-            COLLECTION_NAME,
-        )
+def get_collection():
+    collection = client.get_or_create_collection(
+        name=COLLECTION_NAME,
+    )
 
-    return client.get_or_create_collection(name=COLLECTION_NAME)
+    logger.info(
+        "ChromaDB collection hazır: %s",
+        COLLECTION_NAME,
+    )
+
+    return collection
+
+
+def get_stored_file_hash(
+    collection,
+    source_path: str,
+) -> str | None:
+    result = collection.get(
+        where={"source_path": source_path},
+        include=["metadatas"],
+        limit=1,
+    )
+
+    metadatas = result.get("metadatas") or []
+
+    if not metadatas:
+        return None
+
+    return metadatas[0].get("file_hash")
 
 
 def index_documents():
     start_time = time.perf_counter()
 
     indexed_files = 0
+    skipped_files = 0
     failed_files = 0
     created_chunks = 0
 
-    collection = recreate_collection()
+    collection = get_collection()
 
     if not KNOWLEDGE_DIR.exists():
         logger.error(
@@ -64,30 +83,66 @@ def index_documents():
             continue
 
         try:
-            logger.info("Doküman işleniyor: %s", file)
+            logger.info("Doküman kontrol ediliyor: %s", file)
 
+            source_path = str(file.relative_to(KNOWLEDGE_DIR))
             file_hash = calculate_file_hash(file)
+
+            stored_file_hash = get_stored_file_hash(
+                collection,
+                source_path,
+            )
+
+            if stored_file_hash == file_hash:
+                skipped_files += 1
+
+                logger.info(
+                    "Doküman değişmemiş, atlanıyor: %s",
+                    source_path,
+                )
+                continue
+
+            if stored_file_hash is not None:
+                collection.delete(
+                    where={"source_path": source_path},
+                )
+
+                logger.info(
+                    "Dokümanın eski chunk'ları silindi: %s",
+                    source_path,
+                )
+
             text = load_document(file)
 
             if not text.strip():
-                logger.warning("Doküman boş, atlanıyor: %s", file)
+                logger.warning(
+                    "Doküman boş, atlanıyor: %s",
+                    source_path,
+                )
                 continue
 
             chunks = split_text(text)
 
             if not chunks:
-                logger.warning("Chunk oluşturulamadı: %s", file)
+                logger.warning(
+                    "Chunk oluşturulamadı: %s",
+                    source_path,
+                )
                 continue
 
             for index, chunk in enumerate(chunks):
                 embedding = create_embedding(chunk)
 
                 collection.add(
-                    ids=[f"{file.stem}_{index}"],
+                    ids=[f"{source_path}::{index}"],
                     documents=[chunk],
                     embeddings=[embedding],
                     metadatas=[
-                        parse_metadata(file, index, file_hash),
+                        parse_metadata(
+                            file,
+                            index,
+                            file_hash,
+                        ),
                     ],
                 )
 
@@ -97,12 +152,13 @@ def index_documents():
 
             logger.info(
                 "Doküman indexlendi: %s | chunk=%s",
-                file.name,
+                source_path,
                 len(chunks),
             )
 
         except Exception:
             failed_files += 1
+
             logger.exception(
                 "Doküman indexlenirken hata oluştu: %s",
                 file,
@@ -112,10 +168,12 @@ def index_documents():
 
     logger.info(
         (
-            "Indexleme tamamlandı | başarılı_dosya=%s | "
-            "başarısız_dosya=%s | chunk=%s | süre=%.2f saniye"
+            "Indexleme tamamlandı | indexlenen_dosya=%s | "
+            "atlanan_dosya=%s | başarısız_dosya=%s | "
+            "chunk=%s | süre=%.2f saniye"
         ),
         indexed_files,
+        skipped_files,
         failed_files,
         created_chunks,
         elapsed_time,
