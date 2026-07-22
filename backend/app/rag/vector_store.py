@@ -58,13 +58,32 @@ def get_stored_file_hash(
     return metadatas[0].get("file_hash")
 
 
+def get_indexed_source_paths(
+    collection,
+) -> set[str]:
+    result = collection.get(
+        include=["metadatas"],
+    )
+
+    metadatas = result.get("metadatas") or []
+
+    return {
+        metadata["source_path"]
+        for metadata in metadatas
+        if metadata and metadata.get("source_path")
+    }
+
+
 def index_documents():
     start_time = time.perf_counter()
 
     indexed_files = 0
     skipped_files = 0
+    deleted_files = 0
     failed_files = 0
     created_chunks = 0
+
+    current_source_paths: set[str] = set()
 
     collection = get_collection()
 
@@ -83,9 +102,19 @@ def index_documents():
             continue
 
         try:
-            logger.info("Doküman kontrol ediliyor: %s", file)
+            logger.info(
+                "Doküman kontrol ediliyor: %s",
+                file,
+            )
 
-            source_path = str(file.relative_to(KNOWLEDGE_DIR))
+            source_path = str(
+                file.relative_to(KNOWLEDGE_DIR)
+            )
+
+            current_source_paths.add(
+                source_path
+            )
+
             file_hash = calculate_file_hash(file)
 
             stored_file_hash = get_stored_file_hash(
@@ -104,7 +133,9 @@ def index_documents():
 
             if stored_file_hash is not None:
                 collection.delete(
-                    where={"source_path": source_path},
+                    where={
+                        "source_path": source_path
+                    }
                 )
 
                 logger.info(
@@ -131,10 +162,14 @@ def index_documents():
                 continue
 
             for index, chunk in enumerate(chunks):
-                embedding = create_embedding(chunk)
+                embedding = create_embedding(
+                    chunk
+                )
 
                 collection.add(
-                    ids=[f"{source_path}::{index}"],
+                    ids=[
+                        f"{source_path}::{index}"
+                    ],
                     documents=[chunk],
                     embeddings=[embedding],
                     metadatas=[
@@ -142,7 +177,7 @@ def index_documents():
                             file,
                             index,
                             file_hash,
-                        ),
+                        )
                     ],
                 )
 
@@ -164,16 +199,45 @@ def index_documents():
                 file,
             )
 
-    elapsed_time = time.perf_counter() - start_time
+    indexed_source_paths = get_indexed_source_paths(
+        collection,
+    )
+
+    orphaned_source_paths = (
+        indexed_source_paths - current_source_paths
+    )
+
+    for source_path in orphaned_source_paths:
+        collection.delete(
+            where={
+                "source_path": source_path
+            }
+        )
+
+        deleted_files += 1
+
+        logger.info(
+            "Yetim kayıt silindi: %s",
+            source_path,
+        )
+
+    elapsed_time = (
+        time.perf_counter() - start_time
+    )
 
     logger.info(
         (
-            "Indexleme tamamlandı | indexlenen_dosya=%s | "
-            "atlanan_dosya=%s | başarısız_dosya=%s | "
-            "chunk=%s | süre=%.2f saniye"
+            "Indexleme tamamlandı | "
+            "indexlenen_dosya=%s | "
+            "atlanan_dosya=%s | "
+            "silinen_dosya=%s | "
+            "başarısız_dosya=%s | "
+            "chunk=%s | "
+            "süre=%.2f saniye"
         ),
         indexed_files,
         skipped_files,
+        deleted_files,
         failed_files,
         created_chunks,
         elapsed_time,
