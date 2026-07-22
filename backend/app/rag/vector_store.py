@@ -8,6 +8,7 @@ from app.ai.embedding_client import create_embedding
 from app.rag.chunker import split_text
 from app.rag.loader import load_document
 from app.rag.metadata_parser import parse_metadata
+from app.utils.hash_utils import calculate_file_hash
 
 BASE_DIR = Path(__file__).resolve().parents[3]
 KNOWLEDGE_DIR = BASE_DIR / "data" / "knowledge"
@@ -65,6 +66,7 @@ def index_documents():
         try:
             logger.info("Doküman işleniyor: %s", file)
 
+            file_hash = calculate_file_hash(file)
             text = load_document(file)
 
             if not text.strip():
@@ -85,7 +87,7 @@ def index_documents():
                     documents=[chunk],
                     embeddings=[embedding],
                     metadatas=[
-                        parse_metadata(file, index),
+                        parse_metadata(file, index, file_hash),
                     ],
                 )
 

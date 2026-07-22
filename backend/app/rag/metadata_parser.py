@@ -4,7 +4,7 @@ BASE_DIR = Path(__file__).resolve().parents[3]
 KNOWLEDGE_DIR = BASE_DIR / "data" / "knowledge"
 
 
-def parse_metadata(file_path: Path, chunk_index: int) -> dict:
+def parse_metadata(file_path: Path, chunk_index: int, file_hash: str) -> dict:
     relative_parts = file_path.relative_to(KNOWLEDGE_DIR).parts
 
     metadata = {
@@ -17,6 +17,7 @@ def parse_metadata(file_path: Path, chunk_index: int) -> dict:
         "model": "general",
         "year": 0,
         "system": "general",
+        "file_hash": file_hash,
     }
 
     if metadata["domain"] == "general":
