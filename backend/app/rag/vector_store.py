@@ -40,38 +40,46 @@ def get_collection():
     return collection
 
 
-def get_stored_file_hash(
+def get_indexed_file_hashes(
     collection,
-    source_path: str,
-) -> str | None:
-    result = collection.get(
-        where={"source_path": source_path},
-        include=["metadatas"],
-        limit=1,
-    )
-
-    metadatas = result.get("metadatas") or []
-
-    if not metadatas:
-        return None
-
-    return metadatas[0].get("file_hash")
-
-
-def get_indexed_source_paths(
-    collection,
-) -> set[str]:
+) -> dict[str, str | None]:
     result = collection.get(
         include=["metadatas"],
     )
 
     metadatas = result.get("metadatas") or []
+    indexed_file_hashes: dict[str, str | None] = {}
 
-    return {
-        metadata["source_path"]
-        for metadata in metadatas
-        if metadata and metadata.get("source_path")
-    }
+    for metadata in metadatas:
+        if not metadata:
+            continue
+
+        source_path = metadata.get("source_path")
+
+        if not source_path:
+            continue
+
+        file_hash = metadata.get("file_hash")
+
+        if source_path in indexed_file_hashes:
+            existing_file_hash = indexed_file_hashes[source_path]
+
+            if existing_file_hash != file_hash:
+                logger.warning(
+                    (
+                        "Çelişkili file_hash metadata'sı görüldü: "
+                        "%s | ilk=%s | yeni=%s"
+                    ),
+                    source_path,
+                    existing_file_hash,
+                    file_hash,
+                )
+
+            continue
+
+        indexed_file_hashes[source_path] = file_hash
+
+    return indexed_file_hashes
 
 
 def index_documents():
@@ -93,6 +101,13 @@ def index_documents():
             KNOWLEDGE_DIR,
         )
         return
+
+    indexed_file_hashes = get_indexed_file_hashes(
+        collection
+    )
+    indexed_source_paths = set(
+        indexed_file_hashes.keys()
+    )
 
     for file in KNOWLEDGE_DIR.rglob("*"):
         if not file.is_file():
@@ -117,9 +132,8 @@ def index_documents():
 
             file_hash = calculate_file_hash(file)
 
-            stored_file_hash = get_stored_file_hash(
-                collection,
-                source_path,
+            stored_file_hash = indexed_file_hashes.get(
+                source_path
             )
 
             if stored_file_hash == file_hash:
@@ -198,10 +212,6 @@ def index_documents():
                 "Doküman indexlenirken hata oluştu: %s",
                 file,
             )
-
-    indexed_source_paths = get_indexed_source_paths(
-        collection,
-    )
 
     orphaned_source_paths = (
         indexed_source_paths - current_source_paths
