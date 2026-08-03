@@ -12,15 +12,26 @@ client = PersistentClient(path=str(CHROMA_PATH))
 
 collection = client.get_or_create_collection(name=COLLECTION_NAME)
 
+MetadataFilterValue = str | int | float | bool
+MetadataFilter = dict[str, MetadataFilterValue]
 
-def retrieve_vector_context(question: str) -> tuple[str, str]:
+
+def retrieve_vector_context(
+    question: str,
+    metadata_filter: MetadataFilter | None = None,
+) -> tuple[str, str]:
     question_embedding = create_embedding(question)
 
-    result = collection.query(
-        query_embeddings=[question_embedding],
-        n_results=3,
-        include=["documents", "metadatas", "distances"],
-    )
+    query_parameters = {
+        "query_embeddings": [question_embedding],
+        "n_results": 3,
+        "include": ["documents", "metadatas", "distances"],
+    }
+
+    if metadata_filter is not None:
+        query_parameters["where"] = metadata_filter
+
+    result = collection.query(**query_parameters)
 
     documents = result["documents"][0]
     metadatas = result["metadatas"][0]
