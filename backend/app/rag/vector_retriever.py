@@ -19,6 +19,7 @@ MetadataFilter = dict[str, MetadataFilterValue]
 def retrieve_vector_context(
     question: str,
     metadata_filter: MetadataFilter | None = None,
+    max_distance: float | None = None,
 ) -> tuple[str, str]:
     question_embedding = create_embedding(question)
 
@@ -37,11 +38,25 @@ def retrieve_vector_context(
     metadatas = result["metadatas"][0]
     distances = result["distances"][0]
 
-    context = "\n\n---\n\n".join(documents)
+    retrieved_items = list(
+        zip(documents, metadatas, distances)
+    )
+
+    if max_distance is not None:
+        retrieved_items = [
+            (document, metadata, distance)
+            for document, metadata, distance in retrieved_items
+            if distance <= max_distance
+        ]
+
+    context = "\n\n---\n\n".join(
+        document
+        for document, _, _ in retrieved_items
+    )
 
     sources = []
 
-    for metadata, distance in zip(metadatas, distances):
+    for _, metadata, distance in retrieved_items:
         source = metadata.get("source", "unknown")
         source_path = metadata.get("source_path", "unknown")
         chunk = metadata.get("chunk", "unknown")
